@@ -89,7 +89,7 @@ function update() {
   id('slot-note').textContent = count>20?'每筆訂單最多 20 位。':count&&!slots.length?'目前沒有相容梯次，請調整方案或人數。':
     slot?.status==='interest'?(hasTeam?'團隊與現場接待量仍待確認。此梯次僅接受預約意向。':'所選方案涉及的合作團隊仍待確認。此梯次僅接受預約意向。'):'';
   submit.disabled = !slot||!connected||pending;
-  submit.textContent = !connected?'預覽不開放送出':slot?.status==='open'?'確認訂單並前往測試結帳':'送出預約意向';
+  submit.textContent = !connected?'線上報名尚未開放':slot?.status==='open'?'確認訂單並前往測試結帳':'送出預約意向';
 }
 function message(str) {
   result.textContent = str;
@@ -156,7 +156,7 @@ form.addEventListener('submit',async e=>{
   if (checkout) await orderAction('checkout');
 });
 async function load() {
-  id('booking-note').textContent = '此頁為活動預覽。梯次僅供查詢。週一、週六不排活動，開放梯次依執行團隊公告。';
+  id('booking-note').textContent = '可先查看候選梯次並試算票價。實際場次及線上報名開放時間由執行團隊公告。週一、週六不排活動。';
   if (apiOrigin) {
     try {
       catalogue = await api('catalogue',{});
