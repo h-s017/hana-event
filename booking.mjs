@@ -18,8 +18,8 @@ for (const [plan,p] of Object.entries(plans)) {
   const article = document.createElement('article'), group = document.createElement('div');
   article.className = 'tile';
   article.innerHTML = '<span class="num"></span><h3></h3><p></p><div class="price"></div><div class="rates-list"></div><p><button type="button">選擇此方案</button></p>';
-  article.querySelector('.num').textContent = 'PLAN '+plan;
-  article.querySelector('h3').textContent = p.name;
+  article.querySelector('.num').hidden = true;
+  article.querySelector('h3').textContent = plan+'｜'+p.name;
   const planInfo = article.querySelector('p'), detail = document.createElement('small');
   detail.textContent = duration[plan];
   planInfo.append(p.includes,document.createElement('br'),detail);
