@@ -4,6 +4,7 @@ import {apiOrigin} from './config.mjs';
 
 const id = key => document.getElementById(key);
 const form = id('form'), date = id('date'), time = id('time'), submit = id('submit'), result = id('result');
+const onlineBookingEnabled = false;
 const preview = {tickets,slots:candidates(attendance),mode:'preview'};
 let catalogue = preview, lastOrder, pending = false, fingerprint, access;
 const key = 'hana-event:'+eventSlug;
@@ -86,17 +87,17 @@ function update() {
   id('total').textContent = '合計 '+format(price);
   const slots = count<=20 ? catalogue.slots.filter(s=>eligible(s,selected.map(t=>t.plan))&&(s.status==='interest'||s.remaining>=count)) : [];
   selectOptions(date,'請選擇日期',[...new Set(slots.map(s=>s.date))].map(d=>new Option(d,d)));
-  selectOptions(time,'請選擇時段',slots.filter(s=>s.date===date.value).map(s=>new Option(s.time+' · '+(s.status==='open'?'可預約':'預約意向'),s.id)));
+  selectOptions(time,'請選擇時段',slots.filter(s=>s.date===date.value).map(s=>new Option(s.time+' · '+(!onlineBookingEnabled?'洽客服':s.status==='open'?'可預約':'預約意向'),s.id)));
   const slot = slots.find(s=>s.id===time.value);
-  const connected = catalogue.mode!=='preview';
+  const connected = onlineBookingEnabled && catalogue.mode!=='preview';
   id('contact').hidden = !connected||!slot;
   id('name').required = connected&&!!slot;
   id('email').required = connected&&!!slot;
   const hasTeam = slot&&selected.every(t=>slot.available.includes(t.plan));
   id('slot-note').textContent = count>20?'每筆訂單最多 20 位。':count&&!slots.length?'目前沒有相容梯次，請調整方案或人數。':
-    slot?.status==='interest'?(hasTeam?'團隊與現場接待量仍待確認。此梯次僅接受預約意向。':'所選方案涉及的合作團隊仍待確認。此梯次僅接受預約意向。'):'';
+    slot?.status==='interest'?(hasTeam?'團隊與現場接待量仍待確認。請私訊官方 LINE 確認。':'所選方案涉及的合作團隊仍待確認。請私訊官方 LINE 確認。'):'';
   submit.disabled = !slot||!connected||pending;
-  submit.textContent = !connected?'線上報名尚未開放':slot?.status==='open'?'確認訂單並前往測試結帳':'送出預約意向';
+  submit.textContent = !connected?'線上報名 即將開放':slot?.status==='open'?'確認訂單並前往測試結帳':'送出預約意向';
 }
 function message(str) {
   result.textContent = str;
@@ -118,7 +119,7 @@ function show(order) {
   message('訂單 '+order.id+' · '+(states[order.status]||'待核對')+'\n金額 '+format(order.amount));
 }
 async function orderAction(action) {
-  if (!lastOrder||pending) return;
+  if (!onlineBookingEnabled||!lastOrder||pending) return;
   pending = true;
   update();
   try {
@@ -140,7 +141,7 @@ form.addEventListener('input',e=>{
 });
 form.addEventListener('submit',async e=>{
   e.preventDefault();
-  if (pending||submit.disabled) return;
+  if (!onlineBookingEnabled||pending||submit.disabled) return;
   const selected = lines();
   const data = {slot:time.value,name:id('name').value,email:id('email').value,
     lines:selected.map(({id,quantity})=>({id,quantity})),quotedAmount:selected.reduce((n,l)=>n+l.price*l.quantity,0)};
@@ -163,6 +164,7 @@ form.addEventListener('submit',async e=>{
   if (checkout) await orderAction('checkout');
 });
 async function load() {
+  if (!onlineBookingEnabled) { id('booking-note').textContent = '線上報名 即將開放'; update(); return; }
   id('booking-note').textContent = '可先查看候選梯次並試算票價。實際場次及線上報名開放時間由執行團隊公告。週一、週六不排活動。';
   if (apiOrigin) {
     try {
