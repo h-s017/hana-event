@@ -175,7 +175,7 @@ async function load() {
         const article = document.querySelector('[data-partner="'+CSS.escape(p.code)+'"]');
         if (!article) return;
         article.querySelector('h3').textContent = p.name;
-        article.querySelector('p').textContent = p.description;
+        article.querySelector('p').textContent = p.code === 'hineni' ? '調香體驗' : p.description;
         const mark = article.querySelector('img');
         if (mark && p.logo_url) mark.src = p.logo_url;
       });
