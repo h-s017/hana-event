@@ -49,7 +49,14 @@ for (const [plan,p] of Object.entries(plans)) {
     Object.assign(qty,{id:'qty-'+ticket.id,type:'number',min:0,max:20,value:0,required:true,inputMode:'numeric'});
     qty.setAttribute('aria-label',plan+' '+p.name+' '+ticket.type+'人數');
     qty.setAttribute('aria-describedby',price.id);
-    label.append(title,price,qty);
+    const unit = document.createElement('span');
+    unit.textContent = '人';
+    unit.setAttribute('aria-hidden','true');
+    const qtyWrap = document.createElement('span');
+    qtyWrap.style.cssText = 'display:flex;align-items:center;gap:4px;min-width:0;white-space:nowrap';
+    qty.style.cssText = 'flex:1;width:0;min-width:0';
+    qtyWrap.append(qty,unit);
+    label.append(title,price,qtyWrap);
     group.append(label);
   }
   id('quantities').append(group);
@@ -76,7 +83,7 @@ function update() {
     li.textContent = l.plan+' '+plans[l.plan].name+' · '+l.type+' × '+l.quantity+' · '+format(l.price*l.quantity);
     return li;
   }));
-  id('total').textContent = '預估合計 '+format(price);
+  id('total').textContent = '合計 '+format(price);
   const slots = count<=20 ? catalogue.slots.filter(s=>eligible(s,selected.map(t=>t.plan))&&(s.status==='interest'||s.remaining>=count)) : [];
   selectOptions(date,'請選擇日期',[...new Set(slots.map(s=>s.date))].map(d=>new Option(d,d)));
   selectOptions(time,'請選擇時段',slots.filter(s=>s.date===date.value).map(s=>new Option(s.time+' · '+(s.status==='open'?'可預約':'預約意向'),s.id)));
