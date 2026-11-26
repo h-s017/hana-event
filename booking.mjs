@@ -5,6 +5,7 @@ import {apiOrigin} from './config.mjs';
 const id = key => document.getElementById(key);
 const form = id('form'), date = id('date'), time = id('time'), submit = id('submit'), result = id('result');
 const onlineBookingEnabled = false;
+const slotCapacity = 10;
 const preview = {tickets,slots:candidates(attendance),mode:'preview'};
 let catalogue = preview, lastOrder, pending = false, fingerprint, access;
 const key = 'hana-event:'+eventSlug;
@@ -48,7 +49,7 @@ for (const [plan,p] of Object.entries(plans)) {
     const label = document.createElement('label'), title = document.createElement('span'), price = document.createElement('small'), qty = document.createElement('input');
     title.textContent = ticket.type;
     price.id = 'price-'+ticket.id;
-    Object.assign(qty,{id:'qty-'+ticket.id,type:'number',min:0,max:20,value:0,required:true,inputMode:'numeric'});
+    Object.assign(qty,{id:'qty-'+ticket.id,type:'number',min:0,max:slotCapacity,value:0,required:true,inputMode:'numeric'});
     qty.setAttribute('aria-label',plan+' '+p.name+' '+ticket.type+'人數');
     qty.setAttribute('aria-describedby',price.id);
     const unit = document.createElement('span');
@@ -65,7 +66,7 @@ for (const [plan,p] of Object.entries(plans)) {
 }
 function lines() {
   return catalogue.tickets.map(t=>({...t,quantity:id('qty-'+t.id).valueAsNumber}))
-    .filter(t=>Number.isInteger(t.quantity)&&t.quantity>0&&t.quantity<=20);
+    .filter(t=>Number.isInteger(t.quantity)&&t.quantity>0&&t.quantity<=slotCapacity);
 }
 function selectOptions(control,placeholder,options) {
   const selected = control.value;
@@ -75,6 +76,7 @@ function selectOptions(control,placeholder,options) {
 }
 function update() {
   const selected = lines(), count = selected.reduce((n,l)=>n+l.quantity,0), price = selected.reduce((n,l)=>n+l.quantity*l.price,0);
+  const invalid = tickets.some(t=>!id('qty-'+t.id).validity.valid);
   catalogue.tickets.forEach(t=>{
     id('price-'+t.id).textContent = format(t.price);
     id('display-'+t.id).textContent = format(t.price);
@@ -86,7 +88,7 @@ function update() {
     return li;
   }));
   id('total').textContent = '合計 '+format(price);
-  const slots = count<=20 ? catalogue.slots.filter(s=>eligible(s,selected.map(t=>t.plan))&&(s.status==='interest'||s.remaining>=count)) : [];
+  const slots = !invalid && count<=slotCapacity ? catalogue.slots.filter(s=>eligible(s,selected.map(t=>t.plan))&&(s.status==='interest'||s.remaining>=count)) : [];
   selectOptions(date,'請選擇日期',[...new Set(slots.map(s=>s.date))].map(d=>new Option(d,d)));
   selectOptions(time,'請選擇時段',slots.filter(s=>s.date===date.value).map(s=>new Option(s.time+' · '+(!onlineBookingEnabled?'洽客服':s.status==='open'?'可預約':'預約意向'),s.id)));
   const slot = slots.find(s=>s.id===time.value);
@@ -95,9 +97,9 @@ function update() {
   id('name').required = connected&&!!slot;
   id('email').required = connected&&!!slot;
   const hasTeam = slot&&selected.every(t=>slot.available.includes(t.plan));
-  id('slot-note').textContent = count>20?'每筆訂單最多 20 位。':count&&!slots.length?'目前沒有相容梯次，請調整方案或人數。':
+  id('slot-note').textContent = invalid?'請輸入 0 至 10 的整數人數。':count>slotCapacity?'每梯次最多 10 人，A、B、C 方案共用名額。':count&&!slots.length?'目前沒有相容梯次，請調整方案或人數。':
     slot?.status==='interest'?(hasTeam?'團隊與現場接待量仍待確認。請私訊官方 LINE 確認。':'所選方案涉及的合作團隊仍待確認。請私訊官方 LINE 確認。'):'';
-  submit.disabled = !slot||!connected||pending;
+  submit.disabled = invalid||count>slotCapacity||!slot||!connected||pending;
   submit.textContent = !connected?'線上報名 即將開放':slot?.status==='open'?'確認訂單並前往測試結帳':'送出預約意向';
 }
 function message(str) {
