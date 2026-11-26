@@ -15,6 +15,7 @@ const messages = {SLOT_FULL:'該梯次名額已不足，請選擇其他梯次。
   UNCONFIGURED:'此環境尚未啟用結帳。',PRICE_CHANGED:'票價已更新，請重新整理並確認明細。',
   ORDER_CONFLICT:'這筆預約目前無法進行此操作。請重新查詢狀態。'};
 
+id('cards').replaceChildren();
 for (const [plan,p] of Object.entries(plans)) {
   const article = document.createElement('article'), group = document.createElement('div');
   article.className = 'tile';
